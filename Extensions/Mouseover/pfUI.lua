@@ -14,6 +14,9 @@ function Extension.OnLoad()
 end
 
 function Extension.RegisterPlayerScripts()
+    if not pfUI.uf.player then 
+        return 
+    end 
     local onEnterFunc = pfUI.uf.player:GetScript("OnEnter");
     local onLeaveFunc = pfUI.uf.player:GetScript("OnLeave");
     
@@ -33,6 +36,9 @@ function Extension.RegisterPlayerScripts()
 end
 
 function Extension.RegisterTargetScripts()
+    if not pfUI.uf.target then 
+        return 
+    end 
     local onEnterFunc = pfUI.uf.target:GetScript("OnEnter");
     local onLeaveFunc = pfUI.uf.target:GetScript("OnLeave");
     
@@ -52,6 +58,9 @@ function Extension.RegisterTargetScripts()
 end
 
 function Extension.RegisterTargetTargetScripts()
+    if not pfUI.uf.targettarget then 
+        return 
+    end 
     local onEnterFunc = pfUI.uf.targettarget:GetScript("OnEnter");
     local onLeaveFunc = pfUI.uf.targettarget:GetScript("OnLeave");
     
