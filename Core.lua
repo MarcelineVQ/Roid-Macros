@@ -404,7 +404,8 @@ function Roids.FindItem(itemName)
     for i = 0, 19 do
         slotLink = GetInventoryItemLink("player",i)
         if slotLink then
-            local _,_,itemId = string.find(slotLink,"item:(%d+)")
+            local _,_,itemId = string.find(slotLink,"(item:%d+:%d+:%d+:%d+)")
+
             if itemName == itemId then
                 return -i
             end
@@ -420,7 +421,7 @@ function Roids.FindItem(itemName)
         for j = 1, GetContainerNumSlots(i) do
             local l = GetContainerItemLink(i,j)
             if l then
-                _,_,itemId = string.find(l,"item:(%d+)")
+                local _,_,itemId = string.find(l,"(item:%d+:%d+:%d+:%d+)")
                 local name,_link,_,_lvl,_type,subtype = GetItemInfo(itemId)
                 if itemId and itemId == itemName or itemName == name then
                     return i, j;
