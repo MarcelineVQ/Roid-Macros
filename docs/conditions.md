@@ -94,6 +94,7 @@ This is a list of all Chat Commands that support conditions:
 * [casting / nocasting](conditions/casting.md)
 * [channeled / nochanneled](conditions/channeled.md)
 * [combat / nocombat](conditions/combat.md)
+* [combo](conditions/combo.md)
 * [cooldown / nocooldown](conditions/cooldown.md)
 * [dead / nodead](conditions/dead.md)
 * [equipped](conditions/equipped.md)

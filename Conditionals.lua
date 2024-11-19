@@ -316,6 +316,19 @@ function Roids.CheckChanneled(conditionals)
     return true;
 end
 
+-- Checks whether or not the target has the specified number of combo points on it
+-- bigger: 1 if the number needs to be bigger, 0 if it needs to be lower
+-- amount: The required amount
+-- returns: True or false
+function Roids.ValidateCombo(bigger, amount)
+	local cp = GetComboPoints()
+    if bigger == 0 then
+        return cp < tonumber(amount);
+    end
+    
+    return cp > tonumber(amount);
+end
+
 -- Checks whether or not the given unit has more or less power in percent than the given amount
 -- unit: The unit we're checking
 -- bigger: 1 if the percentage needs to be bigger, 0 if it needs to be lower
@@ -817,7 +830,11 @@ Roids.Keywords = {
     nomydebuff = function(conditionals)
         return And(conditionals.nomydebuff,function (v) return not Roids.ValidatePlayerAura(v,true) end)
     end,
-    
+        
+    combo = function(conditionals)
+        return And(conditionals.combo,function (v) return Roids.ValidateCombo(v.bigger, v.amount) end)
+    end,
+
     power = function(conditionals)
         return And(conditionals.power,function (v) return Roids.ValidatePower(conditionals.target, v.bigger, v.amount) end)
     end,
