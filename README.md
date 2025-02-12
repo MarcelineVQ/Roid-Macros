@@ -2,7 +2,7 @@
 
 ### Customized for Weird Vibes:  
 * Uses SuperWoW (if available) to avoid target swaps and buff debuff tracking.
-* Empowers `/starattack` to avoid delaying OH swings when dual wielding
+* Empowers `/startattack` to avoid delaying OH swings when dual wielding
 * `mybuff`, `mydebuff`, and `cooldown` all allow using `<`/`>` in the same way that `mypower` does
 * Allows item id's to be used in macros instead of names, to shorten them
 * New `zone`/`nozone` conditional, e.g.: `[zone:Naxxramas] [nozone:Orgrimmar]`
