@@ -820,14 +820,16 @@ Roids.Keywords = {
     raid = function(conditionals)
         return Roids.IsTargetInGroupType(conditionals.target, "raid");
     end,
-    -- TODO: add multi
+
     group = function(conditionals)
-        if conditionals.group == "party" then
-            return GetNumPartyMembers() > 0;
-        elseif conditionals.group == "raid" then
-            return GetNumRaidMembers() > 0;
-        end
-        return false;
+        return And(conditionals.group,function (v)
+            if v == "party" then
+                return GetNumPartyMembers() > 0 and GetNumRaidMembers() == 0
+            elseif v == "raid" then
+                return GetNumRaidMembers() > 0
+            end
+            return false;
+        end)
     end,
 
     checkchanneled = function(conditionals)
@@ -895,9 +897,13 @@ Roids.Keywords = {
     end,
     
     type = function(conditionals)
-        return And(conditionals.type, function (v) return Roids.ValidateCreatureType(v, conditionals.target) end)
+        return And(conditionals.type, function (types)
+            return Or(Roids.splitString(types, "/"), function (v)
+                return Roids.ValidateCreatureType(v, conditionals.target)
+            end)
+        end)
     end,
-    
+
     cooldown = function(conditionals)
         return And(conditionals.cooldown,function (v) return Roids.ValidateCooldown(v) end)
     end,
