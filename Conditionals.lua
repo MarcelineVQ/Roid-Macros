@@ -693,7 +693,7 @@ Roids.Keywords = {
             end)
         end)
     end,
-    
+
     mod = function(conditionals)
         for _,mods in pairs(conditionals.mod) do
             for k,v in pairs(Roids.splitString(mods, "/")) do
@@ -708,25 +708,29 @@ Roids.Keywords = {
         end
         return false
     end,
-    
+
     target = function(conditionals)
         return Roids.IsValidTarget(conditionals.target, conditionals.help);
     end,
-    
+
     combat = function(conditionals)
         return UnitAffectingCombat("player");
     end,
-    
+
     nocombat = function(conditionals)
         return not UnitAffectingCombat("player");
     end,
-    
+
     stealth = function(conditionals)
-        return Roids.HasBuff("Interface\\Icons\\Ability_Ambush");
+        return And(conditionals.stealth,function (v)
+            return Roids.ValidatePlayerAura("stealth",true) or Roids.ValidatePlayerAura("prowl",true)
+        end)
     end,
-    
+
     nostealth = function(conditionals)
-        return not Roids.HasBuff("Interface\\Icons\\Ability_Ambush");
+        return And(conditionals.stealth,function (v)
+            return not (Roids.ValidatePlayerAura("stealth",true) or Roids.ValidatePlayerAura("prowl",true))
+        end)
     end,
 
     casting = function(conditionals)
