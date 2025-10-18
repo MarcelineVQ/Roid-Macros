@@ -448,6 +448,22 @@ function Roids.ValidatePlayerAura(aura_data,isbuff)
     end
 end
 
+function Roids.ValidatePlayerAuraCount(bigger, amount)
+    local aura_ix = -1
+    local num = 0
+    while true do
+        aura_ix = GetPlayerBuff(num,"HELPFUL|PASSIVE")
+        if aura_ix == -1 then break end
+        num = num + 1
+    end
+
+    if bigger == 0 then
+        return num < tonumber(amount)
+    else
+        return num > tonumber(amount)
+    end
+end
+
 -- Returns the cooldown of the given spellName or nil if no such spell was found
 function Roids.GetSpellCooldownByName(spellName)
     -- 1) Try the cached location first
@@ -854,6 +870,10 @@ Roids.Keywords = {
 
     nodebuff = function(conditionals)
         return And(conditionals.nodebuff,function (v) return not Roids.ValidateAura(v, false, conditionals.target) end)
+    end,
+
+    mybuffcount = function(conditionals)
+        return And(conditionals.mybuffcount,function (v) return Roids.ValidatePlayerAuraCount(v.bigger, v.amount) end)
     end,
 
     mybuff = function(conditionals)
