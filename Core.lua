@@ -487,6 +487,12 @@ function Roids.DoUse(msg)
     end
 
     local action = function(msg)
+        -- check if it's an item slot, e.g. trinkets: /use 13
+        local n = tonumber(msg)
+        if n and n < 21 then
+            return UseInventoryItem(n);
+        end
+
         local bag, slot = Roids.FindItem(msg);
         
         if bag and bag < 0 then
