@@ -81,7 +81,7 @@ function Roids.CancelAura(auraName)
         auraName = string.gsub(auraName, "_"," ")
         local bid = GetPlayerBuffID(aura_ix)
         bid = (bid < -1) and (bid + 65536) or bid
-        if string.lower(SpellInfo(bid)) == string.lower(auraName) then
+        if (string.lower(SpellInfo(bid)) == string.lower(auraName)) or (bid == tonumber(auraName)) then
             CancelPlayerBuff(aura_ix)
             break
         end
