@@ -14,6 +14,10 @@ Roids.Extensions = Roids.Extensions or {};
 
 Roids.has_superwow = SetAutoloot and true or false
 
+-- GUID tracking table for targeting by GUID
+-- Maps full GUIDs to unit names (e.g., "0x0000000600001234" -> "Goober")
+Roids.GuidToUnitName = Roids.GuidToUnitName or {};
+
 -- Executes the given Macro's body
 -- body: The Macro's body
 function Roids.ExecuteMacroBody(body,inline)
@@ -357,21 +361,55 @@ function Roids.DoCast(msg)
     return handled;
 end
 
--- Attempts to target a unit by its name using a set of conditionals
+-- Attempts to target a unit by its name or GUID using a set of conditionals
 -- msg: The raw message intercepted from a /target command
+-- Supports GUID targeting: full 18-char GUID uses TargetUnit directly,
+-- shorter GUIDs starting with 0x scan the tracked GUID table
 function Roids.DoTarget(msg)
     local handled = false;
-    
+    msg = string.lower(msg)
+
     local action = function(msg)
         if string.sub(msg, 1, 1) == "@" then
             msg = UnitName(string.sub(msg, 2));
         end
-        
+
+        -- Check if msg looks like a GUID (starts with 0x)
+        if string.sub(msg, 1, 2) == "0x" then
+            local len = string.len(msg)
+            if len == 18 then
+                -- Full GUID - use TargetUnit directly
+                TargetUnit(msg)
+                return
+            else
+                -- Partial GUID - look up unit from tracked table
+                local unit = nil
+                local srch = "^"..msg
+                for fullGuid, _ in pairs(Roids.GuidToUnitName) do
+                    if string.find(string.lower(fullGuid), srch) then
+                        if not unit then
+                            unit = fullGuid
+                        end
+                        if not UnitIsDead(fullGuid) then
+                            unit = fullGuid
+                            break
+                        end
+                    end
+                end
+                if unit then
+                    TargetUnit(unit)
+                else
+                    Roids.Hooks.TARGET_SlashCmd(msg)
+                end
+                return
+            end
+        end
+
         Roids.Hooks.TARGET_SlashCmd(msg);
     end
-    
+
     for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
-        if Roids.DoWithConditionals(v, Roids.Hooks.TARGET_SlashCmd, Roids.FixEmptyTargetSetTarget, false, action) then
+        if Roids.DoWithConditionals(v, action, Roids.FixEmptyTargetSetTarget, false, action) then
             handled = true;
             break;
         end
@@ -598,6 +636,9 @@ Roids.Frame:RegisterEvent("PLAYER_TARGET_CHANGED");
 Roids.Frame:RegisterEvent("START_AUTOREPEAT_SPELL");
 Roids.Frame:RegisterEvent("STOP_AUTOREPEAT_SPELL");
 Roids.Frame:RegisterEvent("ACTIONBAR_SLOT_CHANGED");
+Roids.Frame:RegisterEvent("UNIT_FLAGS");
+Roids.Frame:RegisterEvent("UNIT_MODEL_CHANGED");
+Roids.Frame:RegisterEvent("PLAYER_ENTERING_WORLD");
 -- Roids.Frame:RegisterEvent("UI_ERROR_MESSAGE");
 
 Roids.Frame:SetScript("OnEvent", function()
@@ -686,6 +727,7 @@ end
 function Roids.Frame:PLAYER_LEAVE_COMBAT()
     Roids.CurrentSpell.autoAttack = false;
     Roids.CurrentSpell.autoAttackLock = false
+    Roids.CleanupGuidTable()
 end
 
 -- just a secondary check, shouldn't matter much
@@ -727,6 +769,39 @@ function Roids.Frame:ACTIONBAR_SLOT_CHANGED(slot)
             return
         end
     end
+end
+
+-- Tracks a unit's GUID when detected via UNIT_FLAGS or UNIT_MODEL_CHANGED
+-- guid: The unit guid
+function Roids.TrackUnitGuid(unit)
+    local _,guid = UnitExists(unit)
+    if not guid then return end
+
+    local name = UnitName(guid)
+    if name then
+        Roids.GuidToUnitName[guid] = name
+    end
+end
+
+function Roids.Frame:UNIT_FLAGS(unit)
+    Roids.TrackUnitGuid(unit)
+end
+
+function Roids.Frame:UNIT_MODEL_CHANGED(unit)
+    Roids.TrackUnitGuid(unit)
+end
+
+-- Cleans up GUIDs that no longer exist in the world
+function Roids.CleanupGuidTable()
+    for guid, name in pairs(Roids.GuidToUnitName) do
+        if not UnitExists(guid) then
+            Roids.GuidToUnitName[guid] = nil
+        end
+    end
+end
+
+function Roids.Frame:PLAYER_ENTERING_WORLD()
+    Roids.CleanupGuidTable()
 end
 
 function Roids.Frame:START_AUTOREPEAT_SPELL(...)

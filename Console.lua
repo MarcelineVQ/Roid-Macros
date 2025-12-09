@@ -67,6 +67,8 @@ SlashCmdList.STOPATTACK = function(msg)
     end
 end
 
+-- todo add /run so run can also have conditionals
+
 SLASH_STOPCASTING1 = "/stopcasting";
 
 SlashCmdList.STOPCASTING = SpellStopCasting;
