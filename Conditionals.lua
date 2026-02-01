@@ -5,6 +5,15 @@
 local _G = _G or getfenv(0)
 local Roids = _G.Roids or {}
 
+-- Speedy references to utility functions
+local ToLower = Roids.ToLower
+local UnderscoreToSpace = Roids.UnderscoreToSpace
+local splitString = Roids.splitString
+
+-- Speedy references to string library
+local strfind = string.find
+local strgsub = string.gsub
+
 -- local caches to reduce search times for cooldown purposes
 local item_cache = {}
 local spell_cache = {}
@@ -78,10 +87,10 @@ function Roids.CancelAura(auraName)
         local aura_ix = GetPlayerBuff(ix,"HELPFUL")
         ix = ix + 1
         if aura_ix == -1 then break end
-        auraName = string.gsub(auraName, "_"," ")
+        auraName = UnderscoreToSpace(auraName)
         local bid = GetPlayerBuffID(aura_ix)
         bid = (bid < -1) and (bid + 65536) or bid
-        if (string.lower(SpellInfo(bid)) == string.lower(auraName)) or (bid == tonumber(auraName)) then
+        if (ToLower(SpellInfo(bid)) == ToLower(auraName)) or (bid == tonumber(auraName)) then
             CancelPlayerBuff(aura_ix)
             break
         end
@@ -102,14 +111,14 @@ function Roids.ValidateAura(aura_data, isbuff, unit)
     if type(aura_data) == "table" then
         limit = aura_data.bigger
         name = aura_data.name
-        _,_,amount = string.find(aura_data.amount,"^#(%d+)")
+        _,_,amount = strfind(aura_data.amount,"^#(%d+)")
         if not amount then
             Roids.Print("invalid stack amount argument!")
             return false
         end
         amount = tonumber(amount)
     end
-    name = string.gsub(name, "_", " ")
+    name = UnderscoreToSpace(name)
 
     local stack_count = 0
     local i = 1
@@ -179,11 +188,11 @@ function Roids.HasGearEquipped(gearId)
     for slotId=1,19 do
         slotLink = GetInventoryItemLink("player",slotId)
         if slotLink then
-            local _,_,itemId = string.find(slotLink,"item:(%d+)")
+            local _,_,itemId = strfind(slotLink,"item:(%d+)")
             if gearId == itemId then
                 return true
             end
-            local gearName = string.gsub(gearId, "_", " ");
+            local gearName = UnderscoreToSpace(gearId);
             local name,_link,_,_lvl,_type,subtype = GetItemInfo(itemId)
             if name == gearName then
                 return true
@@ -209,12 +218,12 @@ function Roids.HasWeaponEquipped(weaponType)
         return false;
     end
 
-    local _,_,itemId = string.find(slotLink,"item:(%d+)")
+    local _,_,itemId = strfind(slotLink,"item:(%d+)")
     local _name,_link,_,_lvl,_type,subtype = GetItemInfo(itemId)
     -- just had to be special huh?
-    local fist = string.find(subtype,"^Fist")
+    local fist = strfind(subtype,"^Fist")
     -- drops things like the One-Handed prefix
-    local _,_,subtype = string.find(subtype,"%s?(%S+)$")
+    local _,_,subtype = strfind(subtype,"%s?(%S+)$")
 
     if subtype == localizedName or (fist and (Roids.WeaponTypeNames[weaponType].name == Roids.Localized.FistWeapon)) then
         return true
@@ -246,8 +255,8 @@ end
 -- Checks whether or not we're currently casting a channeled spell
 function Roids.CheckChanneled(conditionals)
     -- Remove the "(Rank X)" part from the spells name in order to allow downranking
-    local spellName = string.gsub(Roids.CurrentSpell.spellName, "%(.-%)%s*", "");
-    local channeled = string.gsub(conditionals.checkchanneled, "%(.-%)%s*", "");
+    local spellName = strgsub(Roids.CurrentSpell.spellName, "%(.-%)%s*", "");
+    local channeled = strgsub(conditionals.checkchanneled, "%(.-%)%s*", "");
     
     if Roids.CurrentSpell.type == "channeled" and spellName == channeled then
         return false;
@@ -336,14 +345,14 @@ function Roids.ValidateCreatureType(creatureType, target)
     if not target then return false end
     local targetType = UnitCreatureType(target)
     if not targetType then return false end -- ooze or silithid etc
-    local ct = string.lower(creatureType)
+    local ct = ToLower(creatureType)
     local cl = UnitClassification(target)
     if (ct == "boss" and "worldboss" or ct) == cl then
         return true
     end
-    if string.lower(creatureType) == "boss" then creatureType = "worldboss" end
+    if ct == "boss" then creatureType = "worldboss" end
     local englishType = Roids.Localized.CreatureTypes[targetType];
-    return string.lower(creatureType) == string.lower(targetType) or creatureType == englishType;
+    return ct == ToLower(targetType) or creatureType == englishType;
 end
 
 -- TODO this should technically keep a table of cooldowns it's seen and when, in case of something like GetContainerItemCooldownByName and you run out of the item
@@ -355,7 +364,7 @@ function Roids.ValidateCooldown(cooldown_data)
         amount = tonumber(cooldown_data.amount)
         name = cooldown_data.name
     end
-    name = string.gsub(name, "_", " ")
+    name = UnderscoreToSpace(name)
 
     local cd,start = Roids.GetSpellCooldownByName(name)
     if not cd then cd,start = Roids.GetInventoryCooldownByName(name) end
@@ -390,7 +399,7 @@ function Roids.ValidatePlayerAura(aura_data,isbuff)
         -- time check
         timeAmount = tonumber(aura_data.amount)
         -- stack check
-        _,_,stackAmount = string.find(aura_data.amount,"^#(%d+)")
+        _,_,stackAmount = strfind(aura_data.amount,"^#(%d+)")
         if not timeAmount and not stackAmount then
             Roids.Print("invalid stack/time amount argument!")
         end
@@ -403,7 +412,7 @@ function Roids.ValidatePlayerAura(aura_data,isbuff)
         end
         name = aura_data.name
     end
-    name = string.gsub(name, "_", " ")
+    name = UnderscoreToSpace(name)
 
     local rem,stack_count,i = 0,0,1
     while true do
@@ -508,7 +517,7 @@ function Roids.GetInventoryCooldownByName(itemName)
     local function CheckItem(slot)
         local slotLink = GetInventoryItemLink("player",slot)
         if not slotLink then return nil end
-        local _,_,itemId = string.find(slotLink,"item:(%d+)")
+        local _,_,itemId = strfind(slotLink,"item:(%d+)")
         local name,_link,_,_lvl,_type,subtype = GetItemInfo(itemId)
         if itemName == itemId or name == itemName then
             local start, duration = GetInventoryItemCooldown("player", slot);
@@ -539,7 +548,7 @@ function Roids.GetContainerItemCooldownByName(itemName)
     local function CheckItem(bag,slot)
         local slotLink = GetContainerItemLink(bag,slot)
         if not slotLink then return nil end
-        local _,_,itemId = string.find(slotLink,"item:(%d+)")
+        local _,_,itemId = strfind(slotLink,"item:(%d+)")
         local name,_link,_,_lvl,_type,subtype = GetItemInfo(itemId)
         if itemName == itemId or name == itemName then
             local start, duration = GetContainerItemCooldown(bag, slot);
@@ -608,10 +617,10 @@ Roids.reactives = {
 Roids.live_reactives = {}
 function Roids.CheckReactiveAbility(spellName)
     local _,class = UnitClass("player")
-    spellName = string.lower(spellName)
+    spellName = ToLower(spellName)
     local function CheckAction(tex,spellName,actionSlot)
         if tex and spellName and actionSlot then
-            tex = string.lower(tex)
+            tex = ToLower(tex)
             for rspell_texture,rspellName in pairs(Roids.reactives[class]) do
                 if rspell_texture == tex and rspellName == spellName then
                     local isUsable = IsUsableAction(actionSlot)
@@ -664,7 +673,7 @@ function Roids.CheckSpellCast(spell,unit)
         Roids.Print("'casting' conditional requires SuperWoW")
         return
     end
-    local spell = string.gsub(spell or "", "_", " ");
+    local spell = UnderscoreToSpace(spell or "");
     local _,guid = UnitExists(unit)
     if not guid or (guid and not Roids.spell_tracking[guid]) then
         return false
@@ -704,7 +713,7 @@ Roids.Keywords = {
     
     stance = function(conditionals)
         return And(conditionals.stance,function (stances)
-            return Or(Roids.splitString(stances, "/"), function (v)
+            return Or(splitString(stances, "/"), function (v)
                 return (Roids.GetCurrentShapeshiftIndex() == tonumber(v))
             end)
         end)
@@ -712,7 +721,7 @@ Roids.Keywords = {
 
     mod = function(conditionals)
         for _,mods in pairs(conditionals.mod) do
-            for k,v in pairs(Roids.splitString(mods, "/")) do
+            for k,v in pairs(splitString(mods, "/")) do
                 if v == "alt" and IsAltKeyDown() then
                     return true
                 elseif v == "ctrl" and IsControlKeyDown() then
@@ -752,7 +761,7 @@ Roids.Keywords = {
     casting = function(conditionals)
         return And(conditionals.casting,function (spells)
             if spells == "" then return Roids.CheckSpellCast("",conditionals.target) end
-            return Or(Roids.splitString(spells, "/"), function (spell)
+            return Or(splitString(spells, "/"), function (spell)
                 return Roids.CheckSpellCast(spell,conditionals.target)
             end)
         end)
@@ -763,7 +772,7 @@ Roids.Keywords = {
         -- nocasting with options needs all of them to not be true, e.g. AND not OR
         return And(conditionals.nocasting,function (spells)
             if spells == "" then return not Roids.CheckSpellCast("",conditionals.target) end
-            return And(Roids.splitString(spells, "/"), function (spell)
+            return And(splitString(spells, "/"), function (spell)
                 return not Roids.CheckSpellCast(spell,conditionals.target)
             end)
         end)
@@ -771,24 +780,24 @@ Roids.Keywords = {
     end,
 
     zone = function(conditionals)
-        local zone = string.lower(GetRealZoneText())
-        local sub_zone = string.lower(GetSubZoneText())
+        local zone = ToLower(GetRealZoneText())
+        local sub_zone = ToLower(GetSubZoneText())
         return And(conditionals.zone,function (zones)
-            return Or(Roids.splitString(zones, "/"), function (v)
-                v = string.gsub(v, "_", " ")
-                return (sub_zone ~= "" and (string.lower(v) == sub_zone) or (string.lower(v) == zone))
+            return Or(splitString(zones, "/"), function (v)
+                v = UnderscoreToSpace(v)
+                return (sub_zone ~= "" and (ToLower(v) == sub_zone) or (ToLower(v) == zone))
             end)
         end)
     end,
 
     nozone = function(conditionals)
-        local zone = string.lower(GetRealZoneText())
-        local sub_zone = string.lower(GetSubZoneText())
+        local zone = ToLower(GetRealZoneText())
+        local sub_zone = ToLower(GetSubZoneText())
         -- nozone with options needs all of them to not be true, e.g. AND not OR
         return And(conditionals.nozone,function (zones)
-            return And(Roids.splitString(zones, "/"), function (v)
-                v = string.gsub(v, "_", " ")
-                return not ((sub_zone ~= "" and (string.lower(v) == sub_zone)) or (string.lower(v) == zone))
+            return And(splitString(zones, "/"), function (v)
+                v = UnderscoreToSpace(v)
+                return not ((sub_zone ~= "" and (ToLower(v) == sub_zone)) or (ToLower(v) == zone))
             end)
         end)
 
@@ -796,8 +805,8 @@ Roids.Keywords = {
 
     equipped = function(conditionals)
         return And(conditionals.equipped,function (equips)
-            return Or(Roids.splitString(equips, "/"), function (v)
-                v = string.gsub(v, "_", " ")
+            return Or(splitString(equips, "/"), function (v)
+                v = UnderscoreToSpace(v)
                 return (Roids.HasWeaponEquipped(v) or Roids.HasGearEquipped(v))
             end)
         end)
@@ -806,8 +815,8 @@ Roids.Keywords = {
     -- double And, all must not be true
     noequipped = function(conditionals)
         return And(conditionals.noequipped,function (equips)
-            return And(Roids.splitString(equips, "/"), function (v)
-                v = string.gsub(v, "_", " ")
+            return And(splitString(equips, "/"), function (v)
+                v = UnderscoreToSpace(v)
                 return not (Roids.HasWeaponEquipped(v) or Roids.HasGearEquipped(v))
             end)
         end)
@@ -922,7 +931,7 @@ Roids.Keywords = {
     
     type = function(conditionals)
         return And(conditionals.type, function (types)
-            return Or(Roids.splitString(types, "/"), function (v)
+            return Or(splitString(types, "/"), function (v)
                 return Roids.ValidateCreatureType(v, conditionals.target)
             end)
         end)

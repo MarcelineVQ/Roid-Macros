@@ -12,6 +12,20 @@ Roids.mouseoverUnit = Roids.mouseoverUnit or nil;
 
 Roids.Extensions = Roids.Extensions or {};
 
+-- Speedy references to utility functions
+local ToLower = Roids.ToLower
+local UnderscoreToSpace = Roids.UnderscoreToSpace
+local splitStringIgnoringQuotes = Roids.splitStringIgnoringQuotes
+local Trim = Roids.Trim
+local splitString = Roids.splitString
+
+-- Speedy references to string library
+local strfind = string.find
+local strsub = string.sub
+local strlen = string.len
+local strgsub = string.gsub
+local strgfind = string.gfind
+
 Roids.has_superwow = SetAutoloot and true or false
 
 -- Parse result cache (keyed by raw message string)
@@ -33,8 +47,8 @@ Roids.GuidToUnitName = Roids.GuidToUnitName or {};
 -- Executes the given Macro's body
 -- body: The Macro's body
 function Roids.ExecuteMacroBody(body,inline)
-    local lines = Roids.splitString(body, "\n");
-    if inline then lines = Roids.splitString(body, "\\n"); end
+    local lines = splitString(body, "\n");
+    if inline then lines = splitString(body, "\\n"); end
     -- print(body)
     for k,v in pairs(lines) do
         -- print(v)
@@ -78,18 +92,18 @@ end
 -- word: The word to search in
 -- returns: The position of the delimeter or nil and 1 for '>' or 2 for '<'
 function Roids.FindDelimeter(word)
-    local delimeter = string.find(word, ":");
+    local delimeter = strfind(word, ":");
     local which = nil;
     
     if not delimeter then
-        delimeter = string.find(word, ">");
+        delimeter = strfind(word, ">");
         which = 1;
         if not delimeter then
-            delimeter = string.find(word, "<");
+            delimeter = strfind(word, "<");
             which = 0;
         end
         -- if not delimeter then
-        --     delimeter = string.find(word, "=");
+        --     delimeter = strfind(word, "=");
         --     which = 2;
         -- end
     end
@@ -106,52 +120,52 @@ end
 -- returns: A set of conditionals found inside the given string
 local function parseMsgInner(msg)
     local modifier = "";
-    local modifierEnd = string.find(msg, "]");
+    local modifierEnd = strfind(msg, "]");
     local help = nil;
 
     -- If we find conditionals trim down the message to everything except the conditionals
-    if string.sub(msg, 1, 1) == "[" and modifierEnd then
-        modifier = string.sub(msg, 2, modifierEnd - 1);
-        msg = string.sub(msg, modifierEnd + 1);
+    if strsub(msg, 1, 1) == "[" and modifierEnd then
+        modifier = strsub(msg, 2, modifierEnd - 1);
+        msg = strsub(msg, modifierEnd + 1);
     -- No conditionals found. Just return the message as is
-    elseif string.sub(msg, 1, 1) ~= "!" then
+    elseif strsub(msg, 1, 1) ~= "!" then
         return msg;
     end
 
     local target;
     local conditionals = {};
 
-    msg = Roids.Trim(msg)
+    msg = Trim(msg)
 
-    if string.sub(msg, 1, 1) == "!" then
-        msg = string.sub(msg, 2);
+    if strsub(msg, 1, 1) == "!" then
+        msg = strsub(msg, 2);
         conditionals.checkchanneled = msg;
     end
 
     local pattern = "(@?%w+:?>?<?%w*[><:'_?%-?%w*]*[#/?_?%w*.?]*)";
     -- print(modifier)
-    for w in string.gfind(modifier, pattern) do
+    for w in strgfind(modifier, pattern) do
         local delimeter, which = Roids.FindDelimeter(w);
         -- print(delimeter)
         -- print(which)
         -- x:y
         if delimeter then
-            local conditional = string.sub(w, 1, delimeter - 1);
-            local rest = string.sub(w, delimeter+1);
+            local conditional = strsub(w, 1, delimeter - 1);
+            local rest = strsub(w, delimeter+1);
             conditionals[conditional] = conditionals[conditional] or {}
             -- print("cond "..conditional)
             -- print("rest "..rest)
             if which then
                 -- print("condwhich1 "..which.." "..conditional)
-                table.insert(conditionals[conditional], { bigger = which, amount = tonumber(string.sub(w, delimeter + 1)) })
-                -- conditionals[conditional] = { bigger = which, amount = string.sub(w, delimeter + 1) };
+                table.insert(conditionals[conditional], { bigger = which, amount = tonumber(strsub(w, delimeter + 1)) })
+                -- conditionals[conditional] = { bigger = which, amount = strsub(w, delimeter + 1) };
             else
                 -- conditionals[conditional] = rest;
 
                 delimeter, which = Roids.FindDelimeter(rest);
                 if delimeter then
-                    local conditional2 = string.sub(rest, 1, delimeter - 1);
-                    local rest2 = string.sub(rest, delimeter+1);
+                    local conditional2 = strsub(rest, 1, delimeter - 1);
+                    local rest2 = strsub(rest, delimeter+1);
                     -- print("cond "..conditional2)
                     -- print("rest "..rest2)
                     -- print("rest "..delimeter)
@@ -160,8 +174,8 @@ local function parseMsgInner(msg)
                         table.insert(conditionals[conditional], { name = conditional2, bigger = which, amount = rest2 })
                         -- conditionals[conditional] = { name = conditional2, bigger = which, amount = rest2 };
                     else
-                        table.insert(conditionals[conditional], string.sub(rest2, delimeter + 1) )
-                        -- conditionals[conditional] = string.sub(rest2, delimeter + 1);
+                        table.insert(conditionals[conditional], strsub(rest2, delimeter + 1) )
+                        -- conditionals[conditional] = strsub(rest2, delimeter + 1);
                     end
                 else
                     -- print(conditional)
@@ -171,8 +185,8 @@ local function parseMsgInner(msg)
                 -- print("condnotwhich "..conditional)
             end
         -- @target
-        elseif string.sub(w, 1, 1) == "@" then
-            conditionals["target"] = string.sub(w,  2);
+        elseif strsub(w, 1, 1) == "@" then
+            conditionals["target"] = strsub(w,  2);
         -- Any other keyword like harm or help
         elseif Roids.Keywords[w] ~= nil then
             if w == "casting" or w == "nocasting" then
@@ -269,18 +283,18 @@ end
 function Roids.DoWithConditionals(msg, hook, fixEmptyTargetFunc, targetBeforeAction, action)
     local msg, conditionals = Roids.parseMsg(msg);
     
-    msg = Roids.Trim(msg);
+    msg = Trim(msg);
     
     -- No conditionals. Just exit.
     if not conditionals then
         if not msg then -- if not even an empty string
             return false;
         else
-            if string.sub(msg, 1, 1) == "{" and string.sub(msg, -1) == "}" then
-                if string.sub(msg, 2, 2) == "\"" and string.sub(msg, -2, -2) == "\"" then
-                    return Roids.ExecuteMacroBody(string.sub(msg, 3, -3), true);
+            if strsub(msg, 1, 1) == "{" and strsub(msg, -1) == "}" then
+                if strsub(msg, 2, 2) == "\"" and strsub(msg, -2, -2) == "\"" then
+                    return Roids.ExecuteMacroBody(strsub(msg, 3, -3), true);
                 else
-                    return Roids.ExecuteMacroByName(string.sub(msg, 2, -2));
+                    return Roids.ExecuteMacroByName(strsub(msg, 2, -2));
                 end
             end
             
@@ -348,11 +362,11 @@ function Roids.DoWithConditionals(msg, hook, fixEmptyTargetFunc, targetBeforeAct
     end
 
     local result = true;
-    if string.sub(msg, 1, 1) == "{" and string.sub(msg, -1) == "}" then
-        if string.sub(msg, 2, 2) == "\"" and string.sub(msg, -2,-2) == "\"" then
-            result = Roids.ExecuteMacroBody(string.sub(msg, 3, -3), true);
+    if strsub(msg, 1, 1) == "{" and strsub(msg, -1) == "}" then
+        if strsub(msg, 2, 2) == "\"" and strsub(msg, -2,-2) == "\"" then
+            result = Roids.ExecuteMacroBody(strsub(msg, 3, -3), true);
         else
-            result = Roids.ExecuteMacroByName(string.sub(msg, 2, -2));
+            result = Roids.ExecuteMacroByName(strsub(msg, 2, -2));
         end
     else
         if Roids.has_superwow and action == CastSpellByName and conditionals.target then
@@ -373,10 +387,10 @@ end
 -- msg: The player's macro text
 function Roids.DoCast(msg)
     local handled = false;
-    msg = Roids.Trim(msg);
+    msg = Trim(msg);
 
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
-    -- for k, v in pairs(Roids.splitString(msg,";%s*")) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
+    -- for k, v in pairs(splitString(msg,";%s*")) do
         if Roids.DoWithConditionals(v, Roids.Hooks.CAST_SlashCmd, Roids.FixEmptyTarget, not Roids.has_superwow, CastSpellByName) then
             handled = true; -- we parsed at least one command
             break;
@@ -391,16 +405,16 @@ end
 -- shorter GUIDs starting with 0x scan the tracked GUID table
 function Roids.DoTarget(msg)
     local handled = false;
-    msg = string.lower(msg)
+    msg = ToLower(msg)
 
     local action = function(msg)
-        if string.sub(msg, 1, 1) == "@" then
-            msg = UnitName(string.sub(msg, 2));
+        if strsub(msg, 1, 1) == "@" then
+            msg = UnitName(strsub(msg, 2));
         end
 
         -- Check if msg looks like a GUID (starts with 0x)
-        if string.sub(msg, 1, 2) == "0x" then
-            local len = string.len(msg)
+        if strsub(msg, 1, 2) == "0x" then
+            local len = strlen(msg)
             if len == 18 then
                 -- Full GUID - use TargetUnit directly
                 TargetUnit(msg)
@@ -410,7 +424,7 @@ function Roids.DoTarget(msg)
                 local unit = nil
                 local srch = "^"..msg
                 for fullGuid, _ in pairs(Roids.GuidToUnitName) do
-                    if string.find(string.lower(fullGuid), srch) then
+                    if strfind(ToLower(fullGuid), srch) then
                         if not unit then
                             unit = fullGuid
                         end
@@ -432,7 +446,7 @@ function Roids.DoTarget(msg)
         Roids.Hooks.TARGET_SlashCmd(msg);
     end
 
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
         if Roids.DoWithConditionals(v, action, Roids.FixEmptyTargetSetTarget, false, action) then
             handled = true;
             break;
@@ -445,7 +459,7 @@ end
 -- msg: The raw message intercepted from a /petattack command
 function Roids.DoPetAttack(msg)
     local handled = false;
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
         if Roids.DoWithConditionals(v, PetAttack, Roids.FixEmptyTarget, true, PetAttack) then
             handled = true;
             break;
@@ -460,13 +474,13 @@ end
 local items_table = {}
 function Roids.FindItem(itemName)
     -- just in case, prob not neccesary given where FindItem is used
-    local itemName = string.gsub(itemName, "_", " ");
+    local itemName = UnderscoreToSpace(itemName);
 
     -- check stored table, micro-optimization
     if items_table[itemName] then
         local link = GetContainerItemLink(items_table[itemName].bag,items_table[itemName].slot)
         if link then
-            local _,_,full_itemId,itemId = string.find(link,"(item:(%d+):%d+:%d+:%d+)")
+            local _,_,full_itemId,itemId = strfind(link,"(item:(%d+):%d+:%d+:%d+)")
             local name,_link,_,_lvl,_type,subtype = GetItemInfo(full_itemId)
             if itemId and itemId == itemName or itemName == name then
                 return items_table[itemName].bag, items_table[itemName].slot;
@@ -479,11 +493,11 @@ function Roids.FindItem(itemName)
     for i = 0, 19 do
         slotLink = GetInventoryItemLink("player",i)
         if slotLink then
-            local _,_,full_itemId,itemId = string.find(slotLink,"(item:(%d+):%d+:%d+:%d+)")
+            local _,_,full_itemId,itemId = strfind(slotLink,"(item:(%d+):%d+:%d+:%d+)")
             if itemName == itemId then
                 return -i
             end
-            -- local gearName = string.gsub(itemId, "_", " ");
+            -- local gearName = strgsub(itemId, "_", " ");
             local name,_link,_,_lvl,_type,subtype = GetItemInfo(full_itemId)
             if name == itemName then
                 return -i
@@ -496,7 +510,7 @@ function Roids.FindItem(itemName)
         for slot = 1, GetContainerNumSlots(bag) do
             local link = GetContainerItemLink(bag,slot)
             if link then
-                local _,_,full_itemId,itemId = string.find(link,"(item:(%d+):%d+:%d+:%d+)")
+                local _,_,full_itemId,itemId = strfind(link,"(item:(%d+):%d+:%d+:%d+)")
                 local name,_link,_,_lvl,_type,subtype = GetItemInfo(full_itemId)
                 if itemId and itemId == itemName or itemName == name then
                     items_table[itemName] = items_table[itemName] or {}
@@ -512,9 +526,9 @@ function Roids.DoCancelAura(msg)
     local handled = false;
 
     local handled = false;
-    msg = Roids.Trim(msg);
+    msg = Trim(msg);
 
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
         if Roids.DoWithConditionals(v, Roids.CancelAura, Roids.FixEmptyTarget, not Roids.has_superwow, Roids.CancelAura) then
             handled = true; -- we parsed at least one command
             break
@@ -531,7 +545,7 @@ function Roids.DoUse(msg)
 
     local checkFor = function(msg,bookType)
         local i = 1
-        local msg_g = string.gsub(msg, "_", " ");
+        local msg_g = UnderscoreToSpace(msg);
         while true do
             local name, spellRank = GetSpellName(i, bookType);
 
@@ -568,10 +582,10 @@ function Roids.DoUse(msg)
         UseContainerItem(bag, slot)
     end
 
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
         local subject = v
-        local _,e = string.find(v,"%]")
-        if e then subject = Roids.Trim(string.sub(v,e+1)) end
+        local _,e = strfind(v,"%]")
+        if e then subject = Trim(strsub(v,e+1)) end
         if checkFor(subject,BOOKTYPE_PET) or checkFor(subject,BOOKTYPE_SPELL) then
             handled = Roids.DoWithConditionals(v, Roids.Hooks.CAST_SlashCmd, Roids.FixEmptyTarget, not Roids.has_superwow, CastSpellByName)
         else
@@ -597,7 +611,7 @@ function Roids.DoEquipOffhand(msg)
         PickupInventoryItem(17);
     end
     
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
         if Roids.DoWithConditionals(v, action, Roids.FixEmptyTarget, false, action) then
             handled = true;
             break;
@@ -616,7 +630,7 @@ function Roids.DoUnshift(msg)
         end
     end
     
-    for k, v in pairs(Roids.splitStringIgnoringQuotes(msg)) do
+    for k, v in pairs(splitStringIgnoringQuotes(msg)) do
         handled = false;
         if Roids.DoWithConditionals(v, action, Roids.FixEmptyTarget, false, action) then
             handled = true;
@@ -691,9 +705,9 @@ function Roids.Frame:ADDON_LOADED(addon)
                 local text = arg[i];
 
                 for k,v in pairs(hooks) do
-                    local begin, _end = string.find(text, "^/"..k.."%s+[!%[]");
+                    local begin, _end = strfind(text, "^/"..k.."%s+[!%[]");
                     if begin then
-                        local msg = string.sub(text, _end);
+                        local msg = strsub(text, _end);
                         v.action(msg);
                         intercepted = true;
                         break
@@ -738,7 +752,7 @@ Roids.Frame.SPELLCAST_INTERRUPTED = Roids.Frame.SPELLCAST_CHANNEL_STOP;
 Roids.Frame.SPELLCAST_FAILED = Roids.Frame.SPELLCAST_CHANNEL_STOP;
 
 function Roids.Frame:UI_ERROR_MESSAGE()
---     if arg1 == ERR_NO_ATTACK_TARGET or string.find(string.lower(arg1), "^Can't attack") or arg1 == ERR_INVALID_ATTACK_TARGET then
+--     if arg1 == ERR_NO_ATTACK_TARGET or strfind(string.lower(arg1), "^Can't attack") or arg1 == ERR_INVALID_ATTACK_TARGET then
 --         Roids.CurrentSpell.autoAttack = false
 --     end
 end
@@ -774,7 +788,7 @@ end
 
 -- Did a reactive slot change? clear it
 function Roids.Frame:ACTIONBAR_SLOT_CHANGED(slot)
-    local tex = string.lower(GetActionTexture(slot) or "")
+    local tex = ToLower(GetActionTexture(slot) or "")
     local _,class = UnitClass("player")
     local reactive_name = Roids.reactives[class] and Roids.reactives[class][tex]
 
@@ -850,7 +864,7 @@ end
 Roids.Hooks.SendChatMessage = SendChatMessage;
 
 function SendChatMessage(msg, ...)
-    if msg and string.find(msg, "^#showtooltip ") then
+    if msg and strfind(msg, "^#showtooltip ") then
         return;
     end
     Roids.Hooks.SendChatMessage(msg, unpack(arg));
