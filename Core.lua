@@ -1,6 +1,6 @@
 --[[
-	Author: Dennis Werner Garske (DWG)
-	License: MIT License
+    Author: Dennis Werner Garske (DWG)
+    License: MIT License
 ]]
 
 -- Setup to wrap our stuff in a table so we don't pollute the global environment
@@ -13,6 +13,18 @@ Roids.mouseoverUnit = Roids.mouseoverUnit or nil;
 Roids.Extensions = Roids.Extensions or {};
 
 Roids.has_superwow = SetAutoloot and true or false
+
+-- Parse result cache (keyed by raw message string)
+local parse_cache = {}
+
+local function shallow_copy_conditionals(conditionals)
+    if not conditionals then return nil end
+    local copy = {}
+    for k, v in pairs(conditionals) do
+        copy[k] = v
+    end
+    return copy
+end
 
 -- GUID tracking table for targeting by GUID
 -- Maps full GUIDs to unit names (e.g., "0x0000000600001234" -> "Goober")
@@ -92,11 +104,11 @@ end
 -- Parses the given message and looks for any conditionals
 -- msg: The message to parse
 -- returns: A set of conditionals found inside the given string
-function Roids.parseMsg(msg)
+local function parseMsgInner(msg)
     local modifier = "";
     local modifierEnd = string.find(msg, "]");
     local help = nil;
-	
+
     -- If we find conditionals trim down the message to everything except the conditionals
     if string.sub(msg, 1, 1) == "[" and modifierEnd then
         modifier = string.sub(msg, 2, modifierEnd - 1);
@@ -105,10 +117,10 @@ function Roids.parseMsg(msg)
     elseif string.sub(msg, 1, 1) ~= "!" then
         return msg;
     end
-	
+
     local target;
     local conditionals = {};
-    
+
     msg = Roids.Trim(msg)
 
     if string.sub(msg, 1, 1) == "!" then
@@ -171,8 +183,20 @@ function Roids.parseMsg(msg)
             end
         end
     end
-    
-	return msg, conditionals;
+
+    return msg, conditionals;
+end
+
+-- Cached wrapper around parseMsgInner
+function Roids.parseMsg(msg)
+    local cached = parse_cache[msg]
+    if cached then
+        return cached.msg, shallow_copy_conditionals(cached.conditionals)
+    end
+
+    local result_msg, result_conditionals = parseMsgInner(msg)
+    parse_cache[msg] = { msg = result_msg, conditionals = result_conditionals }
+    return result_msg, shallow_copy_conditionals(result_conditionals)
 end
 
 function Roids.SetHelp(conditionals)
