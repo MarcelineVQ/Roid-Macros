@@ -940,9 +940,17 @@ Roids.Keywords = {
     cooldown = function(conditionals)
         return And(conditionals.cooldown,function (v) return Roids.ValidateCooldown(v) end)
     end,
-    
+
+    cd = function(conditionals)
+        return And(conditionals.cd,function (v) return Roids.ValidateCooldown(v) end)
+    end,
+
     nocooldown = function(conditionals)
         return And(conditionals.nocooldown,function (v) return not Roids.ValidateCooldown(v) end)
+    end,
+
+    nocd = function(conditionals)
+        return And(conditionals.nocd,function (v) return not Roids.ValidateCooldown(v) end)
     end,
     
     channeled = function(conditionals)
